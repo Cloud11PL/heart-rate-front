@@ -1,6 +1,7 @@
 import axios from "axios";
 
-axios.defaults.baseURL = "http://289f61e63f58.ngrok.io";
+axios.defaults.baseURL = "https://289f61e63f58.ngrok.io ";
+// axios.defaults.baseURL = "http://289f61e63f58.ngrok.io";
 // axios.defaults.baseURL = "http://localhost:5000";
 axios.defaults.headers.post["Content-Type"] = "application/json";
 
