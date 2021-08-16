@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
-import logo from "./logo.svg";
-import "./App.css";
 import mqtt, { MqttClient } from "mqtt";
+import moment from 'moment';
+
+import SideBar from "../../components/SideBar";
+import MainContent from "../../components/MainContent";
+import SpoBar from "../../components/SpoBar";
+import SignsContainer from "./components/SignsContainer";
 
 const host = "wss://hairdresser.cloudmqtt.com:35647";
 const mqttOptions = {
@@ -11,13 +15,29 @@ const mqttOptions = {
   protocol: "wss",
 };
 
+type ArrObj = {
+  spo: number;
+  hr: number;
+  timestamp: Date;
+}
+
+type VitalParamsType = {
+  hr: number;
+  spo: number;
+  status: string
+}
+
 const App: React.FC = () => {
   const [mqttClient, setMqttClient] = useState<MqttClient | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<String | null>(null);
   const [payload, setPayload] = useState<any>(null);
   const [lastContact, setLastContact] = useState<any>(false);
+  const [lastContactDate, setLastContactDate] = useState<Date>(new Date())
 
-  const [vitalParams, setVitalParams] = useState<any>(null);
+  const [vitalParams, setVitalParams] = useState<VitalParamsType | null>(null);
+
+  const [dataArr, setDataArr] = useState<ArrObj[]>([]);
+  // const [dataArr, setDataArr] = useState<ArrObj[]>([{timestamp: new Date(), hr: 80, spo: 90}, {timestamp: new Date(), hr: 80, spo: 90},{timestamp: new Date(), hr: 80, spo: 90},{timestamp: new Date(), hr: 80, spo: 90}]);
 
   const deviceMessageHandler = (msg: string) => {
     const newMsg = msg.split(",");
@@ -32,11 +52,25 @@ const App: React.FC = () => {
     console.log(hrVal, spoVal, status);
 
     setVitalParams({
-      hr: hrVal,
-      spo: spoVal,
+      hr: Number(hrVal),
+      spo: Number(spoVal),
       status,
     });
     setLastContact(true);
+    setLastContactDate(new Date());
+    if (dataArr.length > 0) {
+      setDataArr((arr) => [...arr, {
+        hr: Number(hrVal),
+        spo: Number(spoVal),
+        timestamp: new Date(),
+      }])
+    } else {
+      setDataArr([{
+        hr: Number(hrVal),
+        spo: Number(spoVal),
+        timestamp: new Date(),
+      }])
+    }
   };
 
   useEffect(() => {
@@ -47,8 +81,8 @@ const App: React.FC = () => {
 
     return () => {
       clearTimeout(timer);
-    }
-  }, [vitalParams])
+    };
+  }, [vitalParams]);
 
   const initMessageHandler = (msg: string) => {};
 
@@ -111,20 +145,13 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        Connection status: {connectionStatus}
-      </header>
-      <div className="data-container">
-        {vitalParams && (
-          <>
-            <div>HR: {vitalParams.hr}</div>
-            <div>SPO: {vitalParams.spo}</div>
-            <div>Device status: {lastContact ? '🟢' : '🔴'}</div>
-          </>
-        )}
-      </div>
-    </div>
+    <>
+      <SideBar />
+      <MainContent>
+        <h3>Dashboard</h3>
+        <SignsContainer signsArr={dataArr} hr={vitalParams?.hr} spo={vitalParams?.spo} timestamp={lastContactDate} />
+      </MainContent>
+    </>
   );
 };
 
