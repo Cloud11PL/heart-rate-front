@@ -1,23 +1,24 @@
-import * as React from 'react';
-import { useEffect, useState, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import * as React from "react";
+import { useEffect, useState, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { Scatter, Line } from "react-chartjs-2";
+import Chart from "react-apexcharts";
 
-import MainContent from '../../components/MainContent';
-import SideBar from '../../components/SideBar';
+import MainContent from "../../components/MainContent";
+import SideBar from "../../components/SideBar";
 
-import axios from '../../axios';
-import moment from 'moment';
+import axios from "../../axios";
+import moment from "moment";
 
 type ResponseObj = {
   hrVal: number;
   spoVal: number;
   createdAt: string;
-}
+};
 
 const Series: React.FC = () => {
   console.log(useLocation());
-  const id = useLocation().pathname.split('/')[2];
+  const id = useLocation().pathname.split("/")[2];
 
   const [chartArrHr, setChartArrHr] = useState<any>([]);
   const [chartArrSpo, setChartArrSpo] = useState<any>([]);
@@ -27,19 +28,25 @@ const Series: React.FC = () => {
     console.log(id);
 
     axios.get(`/seriesPerId?seriesId=${id}`).then((response) => {
-      const res = response as unknown as ResponseObj[];
+      const res = (response as unknown) as ResponseObj[];
       console.log(res);
-      const tempArrHr = res.map((el) => ({
-        x: moment(el.createdAt),
-        y: el.hrVal,
-      }))
+      // const tempArrHr = res.map((el) => ({
+      //   x: moment(el.createdAt),
+      //   y: el.hrVal,
+      // }))
+
+      const tempArrHr = res.map((el, i) => [new Date(el.createdAt).getTime(), el.hrVal]);
 
       setLabels(res.map((el) => moment(el.createdAt)));
 
-      const tempArrSpo = res.map((el) => ({
-        x: moment(el.createdAt),
-        y: el.spoVal,
-      }))
+      const tempArrSpo = res.map((el, i) => [new Date(el.createdAt).getTime(), el.spoVal]);
+
+      console.log(tempArrHr);
+
+      // const tempArrSpo = res.map((el) => ({
+      //   x: moment(el.createdAt),
+      //   y: el.spoVal,
+      // }))
 
       setChartArrHr(tempArrHr);
       setChartArrSpo(tempArrSpo);
@@ -90,6 +97,43 @@ const Series: React.FC = () => {
     [chartArrSpo]
   );
 
+  const seriesOptions = [
+    {
+      name: "SPO",
+      data: chartArrSpo,
+    },
+    {
+      name: "HR",
+      data: chartArrHr,
+    },
+  ];
+
+  const options = {
+    chart: {
+      height: 350,
+      type: 'scatter',
+      zoom: {
+        enabled: true,
+        type: 'xy'
+      },
+      animations: {
+        enabled: false
+      }
+    },
+    xaxis: {
+      type: 'datetime',
+      tickAmount: 10,
+    },
+    yaxis: {
+      tickAmount: 7
+    },
+    tooltip: {
+      x: {
+        format: 'hh:mm:ss'
+      }
+    }
+  }
+
   const chartOptions = useMemo(
     () => ({
       scales: {
@@ -113,8 +157,8 @@ const Series: React.FC = () => {
             },
           },
           {
-            type: "time"
-          }
+            type: "time",
+          },
         ],
         yAxes: [
           {
@@ -154,19 +198,19 @@ const Series: React.FC = () => {
   );
 
   const chartRender = () => {
-    return (<Scatter options={chartOptions} data={chartData} />)
-  }
+    return <Scatter options={chartOptions} data={chartData} />;
+  };
 
-  return(
+  return (
     <>
       <SideBar />
       <MainContent>
         {chartArrHr.length > 0 && chartArrSpo.length > 0 && (
-          chartRender()
+          <Chart series={seriesOptions} options={options as any} type="line" />
         )}
       </MainContent>
     </>
-  )
-}
+  );
+};
 
 export default Series;
